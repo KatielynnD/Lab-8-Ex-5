@@ -1,0 +1,139 @@
+<html>
+  <head>
+    <style>
+      .node circle {
+        stroke: #3a403d;
+        stroke-width: .5px;
+      }
+
+      .node circle:hover {
+        stroke-width: 3px !important;
+        opacity: 1 !important;
+      }
+
+      #header {
+        margin: auto;
+        width: 50%;
+      }
+
+      h1 {
+        margin: auto;
+        padding: 10px 0 0 0;
+        font: bold 25px Verdana;
+      }
+
+      h2 {
+        margin: 5px 15px 10px 20px;
+        padding: 0;
+        font: bold 16px Verdana;
+      }
+
+      p {
+        margin: 0 15px 15px 20px;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="header">
+      <h1>D3 Bubble Chart with Force Packing – Top 200 Population Cities in 2020</h1>
+      <p>Based on template example by <a href="https://www.d3-graph-gallery.com/circularpacking.html">D3 Graph Gallery</a>.</p>     
+    </div>
+
+    <div id="my_dataviz"></div>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+  var width = window.innerWidth,
+      height = window.innerHeight;
+
+  var svg = d3.select("#my_dataviz")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+  var color = d3.scaleOrdinal(d3.schemeCategory20);
+
+  d3.csv("https://raw.githubusercontent.com/KatielynnD/Lab-8-Data/refs/heads/main/CityData_WUP2018_top200.csv", types, function(error, data) {
+    if (error) throw error;
+
+    
+    data.sort((a, b) => b.pop2020 - a.pop2020);
+
+    const centerX = width / 2;
+    const centerY = height / 2;
+    let spiralRadius = 0;
+    const angleStep = 0.09;  // Tighter spiral
+
+    data.forEach((d, i) => {
+    let spacingFactor;
+    if (d.radius > 20) { // Threshold for "big" dots
+    spacingFactor = 0.1 + (d.radius / 1000); 
+  } else {
+    spacingFactor = 0.1 + (d.radius / 200); 
+  }
+  
+  spiralRadius += d.radius * spacingFactor;
+  d.x = centerX + spiralRadius * Math.cos(i * angleStep);
+  d.y = centerY + spiralRadius * Math.sin(i * angleStep);
+});
+  
+
+
+// create a tooltip
+      var Tooltip = d3.select("#my_dataviz")
+        .append("div")
+        .style("opacity", 0)
+        .attr("class", "tooltip")
+        .style("background-color", "white")
+        .style("border", "solid")
+        .style("border-width", "2px")
+        .style("border-radius", "5px")
+        .style("padding", "5px")
+        .style("position", "absolute")
+      
+
+      // Three function that change the tooltip when user hover / move / leave a cell
+      var mouseover = function(d) {
+        //console.log("Mouseover")  
+        Tooltip
+          .style("opacity", 1)
+      }
+      var mousemove = function(d) {
+        //console.log("Mousemove")
+        Tooltip
+          .html("<h2>" + d.CityName + ", " + d.Country + "</h2>" + "<p>" + d3.format(".1f")(d.pop2020) + "m population" + "</p>")
+          .style("left", (d3.mouse(this)[0]+40) + "px")
+          .style("top", (d3.mouse(this)[1]+40) + "px")
+      }
+      var mouseleave = function(d) {
+        Tooltip
+          .style("opacity", 0)
+      }       
+
+
+    svg.append("g")
+      .attr("class", "node")
+      .selectAll("circle")
+      .data(data)
+      .enter()
+      .append("circle")
+      .attr("r", d => d.radius)
+      .attr("cx", d => d.x)
+      .attr("cy", d => d.y)
+      .attr("fill", d => color(d.Country))
+      .on("mouseover", mouseover)
+      .on("mousemove", mousemove)
+      .on("mouseleave", mouseleave);
+  });
+
+  function types(d) {
+    d.pop2020 = +d.pop2020;
+    d.size = d.pop2020 * 1.9;  // Retain the same size logic
+    d.radius = d.size;
+    return d;
+  }
+</script>
+</body>
+</html>
